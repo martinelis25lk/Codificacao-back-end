@@ -2,7 +2,7 @@ from shared.database import Base
 from sqlalchemy import Column, Integer, Numeric, String
 
 
-class Clientes(Base):
+class ClienteModel(Base):
     __tablename__= 'clientes'
     id = Column(Integer, primary_key = True, autoincrement = True)
     cpf = Column(String(11))

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 import uvicorn
 from routers.clientes_routers import router as clientes_router  
 from shared.database import engine, Base
-from models.clientes_models import Clientes
+from models.clientes_models import ClienteModel
 
 #Base.metadata.drop_all(bind=engine)
 #Base.metadata.create_all(bind=engine)

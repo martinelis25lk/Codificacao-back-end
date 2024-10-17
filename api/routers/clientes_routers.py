@@ -1,10 +1,12 @@
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
+
 from typing import List
 from decimal import Decimal
 from shared.dependencies import get_db
 from sqlalchemy.orm import Session
-from models.clientes_models import Clientes
+from models.clientes_models import ClienteModel
+from typing import List, Optional
 
 
 
@@ -29,7 +31,7 @@ class ClienteRequest(BaseModel):
 def criar_cliente(cliente_request : ClienteRequest,
                    db : Session = Depends(get_db))-> ClienteResponse:
     
-    cliente_a_ser_retornado = Clientes(
+    cliente_a_ser_retornado = ClienteModel(
         **cliente_request.dict()
     )
     
@@ -44,11 +46,28 @@ def criar_cliente(cliente_request : ClienteRequest,
 
 
 
-@router.get("/clients", response_model=List[ClienteResponse])
-def listar_clientes(db: Session = Depends(get_db))-> List[ClienteResponse]:
-    clientes = db.query(Clientes).all()
+
+
+@router.get("/clientes/paginacao", response_model=List[ClienteResponse])
+def listar_clientes(page: int = Query(1, ge=1),
+                    page_size: int = Query(10, ge=1, le=100),
+                    nome : str = Query(None, min_length=1),
+                    email : str =   Query(None, min_length= 1),
+                    db: Session = Depends(get_db)):
+    
+    query = db.query(ClienteModel)
+    
+    if nome:
+        query = query.filter(ClienteModel.nome.ilike(f"%{nome}%"))
+    if email:
+        query = query.filter(ClienteModel.email.ilike(f"%{email}%"))
+    
+    skip = (page -1 )* page_size # calcula o indice inicial
+    clientes = query.offset(skip).limit(page_size).all()
+
     return clientes
 
+    
 
 
 
@@ -56,7 +75,7 @@ def listar_clientes(db: Session = Depends(get_db))-> List[ClienteResponse]:
 @router.delete("/clients/{id_do_cliente}", status_code= 204)
 def excluir_cliente(id_do_cliente : int, 
                     db: Session = Depends(get_db))-> None:
-    cliente = db.query(Clientes).get(id_do_cliente)
+    cliente = db.query(ClienteModel).get(id_do_cliente)
 
 
     db.delete(cliente)
@@ -77,7 +96,7 @@ def listar_cliente_por_id(id_do_cliente: int,
 
 
 def buscar_cliente_por_id(id_do_cliente: int, db: Session) -> ClienteResponse:
-    cliente_a_ser_retornado = db.query(Clientes).get(id_do_cliente)
+    cliente_a_ser_retornado = db.query(ClienteModel).get(id_do_cliente)
     if cliente_a_ser_retornado is None:
         raise("cliente nao existe.")
     
