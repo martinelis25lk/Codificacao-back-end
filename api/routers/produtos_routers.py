@@ -20,15 +20,26 @@ router = APIRouter(prefix="/produtos")
 
 
 class ProdutoCategoriaTipoEnum(str, Enum):
-    MOVEIS =      'moveis'
-    MEDICAMENTO = 'medicamento'
-    ELETRONICOS = 'eletronicos'
+    MEDICAMENTO = "medicamento"
+    ALIMENTO = "alimento"
+    OUTROS = "outros"
+
+# Modelo Pydantic para resposta de produto
+class Produto_Response(BaseModel):
+    codigo: int
+    descricao: str
+    preco: Decimal
+    data_de_validade: datetime
+    categoria: ProdutoCategoriaTipoEnum
+    disponibilidade: bool
+    codigo_de_barras: str
+    secao: str
+    estoque_inicial: int
+    imagem: str
 
 
 
-
-class ProdutoResponse(BaseModel):
-    codigo           : int
+class Produto_Request(BaseModel):
     descricao        : str
     preco            : Decimal
     data_de_validade : datetime   
@@ -41,26 +52,29 @@ class ProdutoResponse(BaseModel):
 
 
 
+@router.post("/produtos", response_model=Produto_Response)
+def ciar_produto(produto_request : Produto_Request, 
+                 db:Session = Depends(get_db))-> Produto_Response:
+        produto_a_ser_criado = ProdutoModel(
+                **produto_request.model_dump()
+                )
+        db.add(produto_a_ser_criado)
+        db.commit()
+        db.refresh(produto_a_ser_criado)
 
+        return produto_a_ser_criado
 
+#def criar_conta(conta_a_pagar_e_receber_request: ContaPagarReceberRequest,
+#                 db : Session = Depends(get_db))-> ContaPagarReceberResponse:
+    
+#    _valida_fornecedor(conta_a_pagar_e_receber_request.fornecedor_cliente_id, db)
+#    contas_a_pagar_e_receber = ContaPagarReceber(
+#        **conta_a_pagar_e_receber_request.dict()
+#    )
 
+#    db.add(contas_a_pagar_e_receber)
+#    db.commit()
+#    db.refresh(contas_a_pagar_e_receber)
 
-
-
-class ProdutoRequest(BaseModel):
-    descricao        : str
-    preco            : Decimal
-    data_de_validade : datetime   
-    categoria        : ProdutoCategoriaTipoEnum
-    disponibilidade  : bool
-    codigo_de_barras : str
-    secao            : str
-    estoque_inicial  : int
-    imagem           : str
-
-
-
-
-
-
+#    return contas_a_pagar_e_receber
 

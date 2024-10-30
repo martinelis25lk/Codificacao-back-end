@@ -22,7 +22,7 @@ class UserUseCases:
         self.db_session = db_session
 
 
-    def user_register(self, user: User):
+    def user_register(self, user: User):#user do tipo schema
         user_model = UserModel(
             username=user.username,
             password=crypt_context.hash(user.password)

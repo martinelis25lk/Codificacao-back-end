@@ -12,10 +12,10 @@ from auth.schemas import User
 #from app.depends import get_db_session, token_verifier
 
 
-user_router = APIRouter(prefix='/user')
+router = APIRouter(prefix='/user')
 
 
-@user_router.post('/register')
+@router.post('/register')
 def user_register(
     user: User,
     db_session: Session = Depends(get_db),
