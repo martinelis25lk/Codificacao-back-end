@@ -96,13 +96,35 @@ def listar_produtos(db:Session= Depends(get_db))-> list[Produto_Response]:
 
 
 
-@router.delete("produto{id_do_produto}")
+@router.delete("produto/{id_do_produto}")
 def excluir_produto(id_do_produto: int, db:Session= Depends(get_db))-> None:
     produto_a_ser_excluido = db.query(ProdutoModel).get(id_do_produto)
 
     db.delete(produto_a_ser_excluido)
     db.commit()
 
+
+
+@router.put("/produtos/{id_do_produto}", response_model= Produto_Response)
+def atualizar_produto(id_do_produto: int, produto_request : Produto_Request,
+                       db:Session = Depends(get_db))-> Produto_Response:
+    produto_a_ser_alterado = buscar_produto_por_id(id_do_produto, db)
+    produto_a_ser_alterado.descricao        = produto_request.descricao
+    produto_a_ser_alterado.data_de_validade = produto_request.data_de_validade
+    produto_a_ser_alterado.codigo_de_barras = produto_request.codigo_de_barras
+    produto_a_ser_alterado.categoria        =  produto_request.categoria
+    produto_a_ser_alterado.disponibilidade  = produto_request.disponibilidade 
+    produto_a_ser_alterado.estoque_inicial  = produto_request.estoque_inicial
+    produto_a_ser_alterado.imagem           = produto_request.imagem
+    produto_a_ser_alterado.secao            = produto_request.secao
+    produto_a_ser_alterado.preco            = produto_request.preco
+
+    
+    db.add(produto_a_ser_alterado)
+    db.commit()
+    db.refresh(produto_a_ser_alterado)
+
+    return produto_a_ser_alterado
      
 
       
