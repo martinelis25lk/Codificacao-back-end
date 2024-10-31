@@ -139,3 +139,7 @@ def buscar_produto_por_id(id_do_produto: int, db: Session) -> Produto_Response:
 
     return produto_a_ser_retornado
 
+
+
+
+
