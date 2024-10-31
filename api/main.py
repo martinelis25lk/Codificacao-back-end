@@ -21,7 +21,7 @@ app = FastAPI()
 
 @app.get("/")
 def ola_mundo_do_fastapi():
-    return {"hello":"worlddddd"}
+    return {"ok":"está funcionando"}
 
 
 

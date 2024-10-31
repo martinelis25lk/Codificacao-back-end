@@ -12,6 +12,7 @@ from datetime import datetime
 
 
 
+
 #categoria, preço, disponibilidade, descricao, valor de venda, codigo de barras, seção, estoque inicial, data de validade, imagens
 
 
@@ -77,4 +78,42 @@ def ciar_produto(produto_request : Produto_Request,
 #    db.refresh(contas_a_pagar_e_receber)
 
 #    return contas_a_pagar_e_receber
+
+
+
+@router.get("/produto/{id_do_produto}", response_model=Produto_Response)
+def pegar_produto_por_id(id_do_produto: int, db: Session = Depends(get_db))-> Produto_Response:
+    return buscar_produto_por_id(id_do_produto, db)
+
+
+
+
+@router.get("/produtos", response_model=list[Produto_Response])
+def listar_produtos(db:Session= Depends(get_db))-> list[Produto_Response]:
+    produtos = db.query(ProdutoModel).all()
+
+    return produtos
+
+
+
+@router.delete("produto{id_do_produto}")
+def excluir_produto(id_do_produto: int, db:Session= Depends(get_db))-> None:
+    produto_a_ser_excluido = db.query(ProdutoModel).get(id_do_produto)
+
+    db.delete(produto_a_ser_excluido)
+    db.commit()
+
+     
+
+      
+
+
+
+def buscar_produto_por_id(id_do_produto: int, db: Session) -> Produto_Response:
+    produto_a_ser_retornado = db.query(ProdutoModel).get(id_do_produto)
+    if produto_a_ser_retornado is None:
+        raise("este produto não existe")
+    
+
+    return produto_a_ser_retornado
 

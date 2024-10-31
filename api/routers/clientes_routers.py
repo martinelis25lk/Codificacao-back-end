@@ -49,7 +49,7 @@ def criar_cliente(cliente_request : ClienteRequest,
 
 
 @router.get("/clientes/paginacao", response_model=List[ClienteResponse])
-def listar_clientes(page: int = Query(1, ge=1),
+def paginar_clientes(page: int = Query(1, ge=1),
                     page_size: int = Query(10, ge=1, le=100),
                     nome : str = Query(None, min_length=1),
                     email : str =   Query(None, min_length= 1),
@@ -87,7 +87,7 @@ def excluir_cliente(id_do_cliente : int,
     
 
 @router.get("clients/{id_do_cliente}", response_model=ClienteResponse)
-def listar_cliente_por_id(id_do_cliente: int,
+def lista_cliente_por_id(id_do_cliente: int,
                           db: Session = Depends(get_db))-> ClienteResponse:
     return buscar_cliente_por_id(id_do_cliente, db)
 
