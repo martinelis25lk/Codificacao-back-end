@@ -7,6 +7,7 @@ from shared.database import engine, Base
 from models.clientes_models import ClienteModel
 from auth.auth_usuario import UserModel
 from models.produtos_models import ProdutoModel
+from models.pediddos_models import PedidoModel
 
 
 #Base.metadata.drop_all(bind=engine)

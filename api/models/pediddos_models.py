@@ -6,7 +6,7 @@ class PedidoModel(Base):
     codigo_pedido = Column(Integer, primary_key= True, autoincrement = True)
     periodo = Column(DateTime())
     status_pedido = Column(Boolean, default= True)
-    cliente = Column()
+    cliente = Column(String, nullable=True)
     secao_dos_produts = Column(String(45))
 
     
