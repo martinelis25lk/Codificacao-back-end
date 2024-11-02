@@ -11,3 +11,4 @@ class User(BaseModel):
         if not re.match(r'^[a-zA-Z0-9@]+$', value):  # Permite letras maiúsculas e minúsculas, números e o símbolo @
             raise ValueError('Formato de nome de usuário inválido')
         return value
+ 

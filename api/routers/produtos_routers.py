@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query,  HTTPException
 from typing import List
 from decimal import Decimal
 from shared.dependencies import get_db
@@ -88,11 +88,47 @@ def pegar_produto_por_id(id_do_produto: int, db: Session = Depends(get_db))-> Pr
 
 
 
-@router.get("/produtos", response_model=list[Produto_Response])
-def listar_produtos(db:Session= Depends(get_db))-> list[Produto_Response]:
-    produtos = db.query(ProdutoModel).all()
+
+
+
+@router.get("/produtos/paginacao", response_model=List[Produto_Response])
+def listar_produtos_com_paginacao(page: int = Query(1, ge=1),
+                    page_size: int = Query(10, ge=1, le=100),
+                    categoria : str = Query(None, min_length=1),
+                    preco : Decimal =  Query(None),
+                    disponibilidade : bool =  Query(None),
+                    db: Session = Depends(get_db)):
+    
+    query = db.query(ProdutoModel)
+    
+    if categoria:
+        query_categoria = query.filter(ProdutoModel.categoria.ilike(f"%{categoria}%"))
+        produtos_categoria = query_categoria.first()
+
+        if not produtos_categoria:
+            raise HTTPException(status_code=404, detail="categoria nao existente no banco de dados.")
+        query = query_categoria
+
+    if preco:
+        query = query.filter(ProdutoModel.preco == preco)
+
+    if disponibilidade is not None:
+        query_disponibilidade = query.filter(ProdutoModel.disponibilidade == disponibilidade)
+        produto_disponibilidade = query_disponibilidade.first()
+        if not produto_disponibilidade:
+            raise HTTPException(status_code= 404, detail="nao existem produtos disponiveis para o filtro de disponibilidade selecionado")
+        query = query_disponibilidade
+        
+
+    
+    skip = (page -1 )* page_size # calcula o indice inicial
+    produtos = query.offset(skip).limit(page_size).all()
+
+    if not produtos:
+        raise HTTPException(status_code=404, detail="Nenhum produto encontrado com os critérios fornecidos.")
 
     return produtos
+
 
 
 
