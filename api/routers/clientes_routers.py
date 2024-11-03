@@ -10,7 +10,7 @@ from typing import List, Optional
 
 
 
-router = APIRouter(prefix="/magazine")
+router = APIRouter(prefix="/clientes")
 
 class ClienteResponse(BaseModel):
     id    : int
@@ -27,7 +27,7 @@ class ClienteRequest(BaseModel):
 
 
 
-@router.post("/clients", response_model = ClienteResponse) 
+@router.post("", response_model = ClienteResponse) 
 def criar_cliente(cliente_request : ClienteRequest,
                    db : Session = Depends(get_db))-> ClienteResponse:
     
@@ -48,7 +48,7 @@ def criar_cliente(cliente_request : ClienteRequest,
 
 
 
-@router.get("/clientes/paginacao", response_model=List[ClienteResponse])
+@router.get("/paginacao", response_model=List[ClienteResponse])
 def paginar_clientes(page: int = Query(1, ge=1),
                     page_size: int = Query(10, ge=1, le=100),
                     nome : str = Query(None, min_length=1),
@@ -72,7 +72,7 @@ def paginar_clientes(page: int = Query(1, ge=1),
 
 
 
-@router.delete("/clients/{id_do_cliente}", status_code= 204)
+@router.delete("/{id_do_cliente}", status_code= 204)
 def excluir_cliente(id_do_cliente : int, 
                     db: Session = Depends(get_db))-> None:
     cliente = db.query(ClienteModel).get(id_do_cliente)
@@ -86,7 +86,7 @@ def excluir_cliente(id_do_cliente : int,
 
     
 
-@router.get("clients/{id_do_cliente}", response_model=ClienteResponse)
+@router.get("/{id_do_cliente}", response_model=ClienteResponse)
 def lista_cliente_por_id(id_do_cliente: int,
                           db: Session = Depends(get_db))-> ClienteResponse:
     return buscar_cliente_por_id(id_do_cliente, db)
@@ -94,21 +94,7 @@ def lista_cliente_por_id(id_do_cliente: int,
 
 
 
-
-def buscar_cliente_por_id(id_do_cliente: int, db: Session) -> ClienteResponse:
-    cliente_a_ser_retornado = db.query(ClienteModel).get(id_do_cliente)
-    if cliente_a_ser_retornado is None:
-        raise("cliente nao existe.")
-    
-
-    return cliente_a_ser_retornado
-
-
-
-
-
-
-@router.put("/clients/{id_do_cliente}", response_model = ClienteResponse, status_code=200)
+@router.put("/{id_do_cliente}", response_model = ClienteResponse, status_code=200)
 def atualizar_cliente(id_do_cliente : int,
                       cliente_request : ClienteRequest,
                       db: Session = Depends(get_db))-> ClienteResponse:
@@ -123,5 +109,14 @@ def atualizar_cliente(id_do_cliente : int,
 
     return cliente_atualizado
 
+
+
+def buscar_cliente_por_id(id_do_cliente: int, db: Session) -> ClienteResponse:
+    cliente_a_ser_retornado = db.query(ClienteModel).get(id_do_cliente)
+    if cliente_a_ser_retornado is None:
+        raise("cliente nao existe.")
+    
+
+    return cliente_a_ser_retornado
 
 

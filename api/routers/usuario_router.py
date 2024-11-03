@@ -12,7 +12,7 @@ from auth.schemas import User
 #from app.depends import get_db_session, token_verifier
 
 
-router = APIRouter(prefix='/user')
+router = APIRouter(prefix='/usuario')
 
 
 @router.post('/register')
@@ -25,7 +25,6 @@ def user_register(
     return JSONResponse(
         content={'msg': 'success'},
         status_code=status.HTTP_201_CREATED,
-        
     )
 
 

@@ -53,12 +53,10 @@ class Produto_Request(BaseModel):
 
 
 
-@router.post("/produtos", response_model=Produto_Response)
-def ciar_produto(produto_request : Produto_Request, 
+@router.post("", response_model=Produto_Response)
+def ciar_produto(produto_request : Produto_Request,
                  db:Session = Depends(get_db))-> Produto_Response:
-        produto_a_ser_criado = ProdutoModel(
-                **produto_request.model_dump()
-                )
+        produto_a_ser_criado = ProdutoModel(**produto_request.model_dump())
         db.add(produto_a_ser_criado)
         db.commit()
         db.refresh(produto_a_ser_criado)
@@ -81,8 +79,8 @@ def ciar_produto(produto_request : Produto_Request,
 
 
 
-@router.get("/produto/{id_do_produto}", response_model=Produto_Response)
-def pegar_produto_por_id(id_do_produto: int, db: Session = Depends(get_db))-> Produto_Response:
+@router.get("/{id_do_produto}", response_model=Produto_Response)
+def listar_produto_por_id(id_do_produto: int, db: Session = Depends(get_db))-> Produto_Response:
     return buscar_produto_por_id(id_do_produto, db)
 
 
@@ -91,7 +89,7 @@ def pegar_produto_por_id(id_do_produto: int, db: Session = Depends(get_db))-> Pr
 
 
 
-@router.get("/produtos/paginacao", response_model=List[Produto_Response])
+@router.get("/paginacao", response_model=List[Produto_Response])
 def listar_produtos_com_paginacao(page: int = Query(1, ge=1),
                     page_size: int = Query(10, ge=1, le=100),
                     categoria : str = Query(None, min_length=1),
@@ -132,7 +130,7 @@ def listar_produtos_com_paginacao(page: int = Query(1, ge=1),
 
 
 
-@router.delete("produto/{id_do_produto}")
+@router.delete("/{id_do_produto}")
 def excluir_produto(id_do_produto: int, db:Session= Depends(get_db))-> None:
     produto_a_ser_excluido = db.query(ProdutoModel).get(id_do_produto)
 
@@ -141,7 +139,7 @@ def excluir_produto(id_do_produto: int, db:Session= Depends(get_db))-> None:
 
 
 
-@router.put("/produtos/{id_do_produto}", response_model= Produto_Response)
+@router.put("/{id_do_produto}", response_model= Produto_Response)
 def atualizar_produto(id_do_produto: int, produto_request : Produto_Request,
                        db:Session = Depends(get_db))-> Produto_Response:
     produto_a_ser_alterado = buscar_produto_por_id(id_do_produto, db)
