@@ -9,7 +9,7 @@ from jose import jwt, JWTError
 from decouple import config
 from models.usuario_model import UserModel
 from auth.schemas import User
-from jose import jwt, JWTError
+
 
 
 SECRET_KEY = config('SECRET_KEY')
@@ -43,13 +43,13 @@ class UserUseCases:
         if usuario_no_bd is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Nome de usuário ou Senha incorretos"
+                detail='Nome de usuário ou Senha incorretos'
             )
         
         if not crypt_context.verify(user.password, usuario_no_bd.password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Nome de usuário ou Senha incorretos"
+                detail='Nome de usuário ou Senha incorretos'
             )
         
         exp = datetime.utcnow() + timedelta(minutes=expira_em)
@@ -61,5 +61,27 @@ class UserUseCases:
 
         token_de_acesso = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-        return {'acess_token': token_de_acesso,
+        return {'token_de_acesso': token_de_acesso,
                 'expiração'  : exp.isoformat()}
+    
+    
+
+    def verifica_token(self, token_de_acesso):
+        try:
+            data = jwt.decode(token_de_acesso, SECRET_KEY, algorithms=[ALGORITHM])
+        except JWTError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Token de acesso inválido ou expirado'
+            )
+        
+        usuario_no_banco = self.db_session.query(UserModel).filter_by(username=data['sub']).first()
+
+        if usuario_no_banco is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Usuário não encontrado'
+            )
+        return usuario_no_banco
+
+    
