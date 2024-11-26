@@ -5,6 +5,7 @@ from pydantic import BaseModel, field_validator
 class User(BaseModel):
     username: str
     password: str
+    cargo   : str =  "usuario"
 
     @field_validator('username')
     def validate_username(cls, value):
@@ -12,3 +13,9 @@ class User(BaseModel):
             raise ValueError('Formato de nome de usuário inválido')
         return value
  
+
+
+
+
+class RefreshTokenSchema(BaseModel):
+    token: str

@@ -22,21 +22,23 @@ class UserUseCases:
     def __init__(self, db_session: Session):
         self.db_session = db_session
 
-
-    def usuario_register(self, user: User):#user do tipo schema
+    
+    def registrar_usuario(self, user: User):
         user_model = UserModel(
-            username=user.username,
-            password=crypt_context.hash(user.password)
+            username = user.username,
+            password = crypt_context.hash(user.password),
+            cargo = user.cargo
         )
         try:
             self.db_session.add(user_model)
             self.db_session.commit()
         except IntegrityError:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Usuario já existe'
+                status.HTTP_400_BAD_REQUEST,
+                detail='usuario ja existe no banco'
             )
-        
+    
+
     def usuario_login(self, user: User, expira_em : int = 30):
         usuario_no_bd = self.db_session.query(UserModel).filter_by(username = user.username).first()
 
@@ -56,32 +58,63 @@ class UserUseCases:
 
         payload ={
             'sub': user.username,
-            'exp': exp
+            'exp': exp,
+            'cargo': usuario_no_bd.cargo,
         }
 
         token_de_acesso = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
         return {'token_de_acesso': token_de_acesso,
-                'expiração'  : exp.isoformat()}
-    
+                'expiração'  : exp.isoformat()
+                }
     
 
-    def verifica_token(self, token_de_acesso):
+    def refresh_user_token(self, token: str):
         try:
-            data = jwt.decode(token_de_acesso, SECRET_KEY, algorithms=[ALGORITHM])
-        except JWTError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Token de acesso inválido ou expirado'
-            )
-        
-        usuario_no_banco = self.db_session.query(UserModel).filter_by(username=data['sub']).first()
+            # Decodificar o token recebido
+            print(f"Token recebido para refresh: {token}")  # Log do token recebido
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username = payload.get("sub")
 
-        if usuario_no_banco is None:
+
+            if username is None:
+                print("Erro: Campo 'sub' ausente no token.")  # Log de erro
+                raise HTTPException(
+                      status_code=status.HTTP_401_UNAUTHORIZED,
+                      detail="Token inválido ou expirado",
+                )
+
+            # Verificar se o usuário ainda existe no banco
+            usuario_no_bd = self.db_session.query(UserModel).filter_by(username=username).first()
+            if usuario_no_bd is None:
+               print(f"Usuário {username} não encontrado no banco de dados.")  # Log de erro
+               raise HTTPException(
+                     status_code=status.HTTP_404_NOT_FOUND,
+                     detail="Usuário não encontrado"
+                     )
+
+            # Gerar um novo token
+            exp = datetime.utcnow() + timedelta(minutes=30)  # Novo tempo de expiração
+            new_payload = {
+                   "sub": username,
+                   "exp": exp,
+                   "cargo": usuario_no_bd.cargo,
+                 }
+            new_token = jwt.encode(new_payload, SECRET_KEY, algorithm=ALGORITHM)
+            print(f"Novo token gerado: {new_token}")  # Log do novo token
+            return {"token_de_acesso": new_token, "expiração": exp.isoformat()}
+
+        except JWTError as e:
+            print(f"Erro na decodificação do token: {e}")  # Log de erro
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Usuário não encontrado'
-            )
-        return usuario_no_banco
+                  status_code=status.HTTP_401_UNAUTHORIZED,
+                  detail="Token inválido ou expirado",
+        )
+
+    
+    
+
+    
+        
 
     

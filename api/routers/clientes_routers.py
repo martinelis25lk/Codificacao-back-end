@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from models.clientes_models import ClienteModel
 from typing import List, Optional
 
+from shared.dependencies import usuario_validacao, admin_validacao
+
 
 
 router = APIRouter(prefix="/clientes")
@@ -27,7 +29,7 @@ class ClienteRequest(BaseModel):
 
 
 
-@router.post("", response_model = ClienteResponse) 
+@router.post("", response_model = ClienteResponse,dependencies=[Depends(admin_validacao)]) 
 def criar_cliente(cliente_request : ClienteRequest,
                    db : Session = Depends(get_db))-> ClienteResponse:
     
@@ -48,7 +50,7 @@ def criar_cliente(cliente_request : ClienteRequest,
 
 
 
-@router.get("/paginacao", response_model=List[ClienteResponse])
+@router.get("/paginacao", response_model=List[ClienteResponse],dependencies=[Depends(usuario_validacao)])
 def paginar_clientes(page: int = Query(1, ge=1),
                     page_size: int = Query(10, ge=1, le=100),
                     nome : str = Query(None, min_length=1),
@@ -72,7 +74,7 @@ def paginar_clientes(page: int = Query(1, ge=1),
 
 
 
-@router.delete("/{id_do_cliente}", status_code= 204)
+@router.delete("/{id_do_cliente}", status_code= 204,dependencies=[Depends(admin_validacao)])
 def excluir_cliente(id_do_cliente : int, 
                     db: Session = Depends(get_db))-> None:
     cliente = db.query(ClienteModel).get(id_do_cliente)
@@ -86,7 +88,7 @@ def excluir_cliente(id_do_cliente : int,
 
     
 
-@router.get("/{id_do_cliente}", response_model=ClienteResponse)
+@router.get("/{id_do_cliente}", response_model=ClienteResponse,dependencies=[Depends(usuario_validacao)])
 def lista_cliente_por_id(id_do_cliente: int,
                           db: Session = Depends(get_db))-> ClienteResponse:
     return buscar_cliente_por_id(id_do_cliente, db)
@@ -94,7 +96,7 @@ def lista_cliente_por_id(id_do_cliente: int,
 
 
 
-@router.put("/{id_do_cliente}", response_model = ClienteResponse, status_code=200)
+@router.put("/{id_do_cliente}", response_model = ClienteResponse, status_code=200,dependencies=[Depends(usuario_validacao)])
 def atualizar_cliente(id_do_cliente : int,
                       cliente_request : ClienteRequest,
                       db: Session = Depends(get_db))-> ClienteResponse:
