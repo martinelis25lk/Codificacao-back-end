@@ -1,16 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 import uvicorn
-from routers.clientes_routers import router as clientes_router
-from routers.usuario_router import router as usuario_router 
-from routers.produtos_routers import router as produto_router
-from routers.pedidos_routers import router as pedido_router
-#from routers.usuario_router import test_routers as test_routers
-from shared.database import engine, Base
-from models.clientes_models import ClienteModel
-from auth.auth_usuario import UserModel
-from models.produtos_models import ProdutoModel
-from models.pedidos_models import PedidoModel
+from api.routers.clientes_routers import router as clientes_router
 
+from api.routers.produtos_routers import router as produto_router
+from api.routers.pedidos_routers import router as pedido_router
+#from routers.usuario_router import test_routers as test_routers
+from api.shared.database import engine, Base
+from api.models.clientes_models import ClienteModel
+from api.models import usuario_model
+from api.models.produtos_models import ProdutoModel
+from api.models.pedidos_models import PedidoModel
 
 
 #Base.metadata.drop_all(bind=engine)
@@ -18,9 +17,12 @@ from models.pedidos_models import PedidoModel
 
 
 
+
+
+
+#app = FastAPI()
+
 app = FastAPI()
-
-
 
 
 @app.get("/")
@@ -33,7 +35,7 @@ def ola_mundo_do_fastapi():
 
 app.include_router(produto_router)
 app.include_router(clientes_router)
-app.include_router(usuario_router)
+
 app.include_router(pedido_router)
 #app.include_router(test_routers)
 

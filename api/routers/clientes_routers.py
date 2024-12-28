@@ -1,14 +1,16 @@
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Query
 
+from fastapi import HTTPException, status
+
 from typing import List
 from decimal import Decimal
-from shared.dependencies import get_db
+from api.shared.dependencies import get_db
 from sqlalchemy.orm import Session
-from models.clientes_models import ClienteModel
+from api.models.clientes_models import ClienteModel
 from typing import List, Optional
+import re 
 
-from shared.dependencies import usuario_validacao, admin_validacao
 
 
 
@@ -29,13 +31,24 @@ class ClienteRequest(BaseModel):
 
 
 
-@router.post("", response_model = ClienteResponse,dependencies=[Depends(admin_validacao)]) 
+@router.post("/cria_cliente", response_model = ClienteResponse) 
 def criar_cliente(cliente_request : ClienteRequest,
                    db : Session = Depends(get_db))-> ClienteResponse:
+    
+
+    cliente_existente = db.query(ClienteModel).filter(ClienteModel.cpf == cliente_request.cpf).first()
+    if cliente_existente:
+        raise HTTPException(detail='Cliente com este CPF já está cadastrado', status_code=status.HTTP_400_BAD_REQUEST)
+    
+    
+    
+    valida_email(cliente_request.email)
+    valida_cpf(cliente_request.cpf)
     
     cliente_a_ser_retornado = ClienteModel(
         **cliente_request.dict()
     )
+
     
     db.add(cliente_a_ser_retornado)
     db.commit()
@@ -50,7 +63,7 @@ def criar_cliente(cliente_request : ClienteRequest,
 
 
 
-@router.get("/paginacao", response_model=List[ClienteResponse],dependencies=[Depends(usuario_validacao)])
+@router.get("/paginacao", response_model=List[ClienteResponse])
 def paginar_clientes(page: int = Query(1, ge=1),
                     page_size: int = Query(10, ge=1, le=100),
                     nome : str = Query(None, min_length=1),
@@ -74,7 +87,7 @@ def paginar_clientes(page: int = Query(1, ge=1),
 
 
 
-@router.delete("/{id_do_cliente}", status_code= 204,dependencies=[Depends(admin_validacao)])
+@router.delete("/{id_do_cliente}", status_code= 204)
 def excluir_cliente(id_do_cliente : int, 
                     db: Session = Depends(get_db))-> None:
     cliente = db.query(ClienteModel).get(id_do_cliente)
@@ -88,7 +101,7 @@ def excluir_cliente(id_do_cliente : int,
 
     
 
-@router.get("/{id_do_cliente}", response_model=ClienteResponse,dependencies=[Depends(usuario_validacao)])
+@router.get("/{id_do_cliente}", response_model=ClienteResponse)
 def lista_cliente_por_id(id_do_cliente: int,
                           db: Session = Depends(get_db))-> ClienteResponse:
     return buscar_cliente_por_id(id_do_cliente, db)
@@ -96,7 +109,7 @@ def lista_cliente_por_id(id_do_cliente: int,
 
 
 
-@router.put("/{id_do_cliente}", response_model = ClienteResponse, status_code=200,dependencies=[Depends(usuario_validacao)])
+@router.put("/{id_do_cliente}", response_model = ClienteResponse, status_code=200)
 def atualizar_cliente(id_do_cliente : int,
                       cliente_request : ClienteRequest,
                       db: Session = Depends(get_db))-> ClienteResponse:
@@ -122,3 +135,19 @@ def buscar_cliente_por_id(id_do_cliente: int, db: Session) -> ClienteResponse:
     return cliente_a_ser_retornado
 
 
+def valida_cpf(cpf : str):
+    if len(cpf) < 11 or not cpf.isdigit():
+        raise HTTPException(
+            status_code=400,
+            detail="CPF inválido. o CPF deve conter exatamente 11 digitos numéricos"
+        )
+
+def valida_email(email : str):
+    email_regex = r"^[a-zA-Z0-9.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    if not re.match(email_regex, email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="E-mail inválido. Insira um e-mail em formato válido"
+        )
+
+    

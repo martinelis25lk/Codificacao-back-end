@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Integer
-from shared.database import Base
+from api.shared.database import Base
 
 #representa modelo de tabela no bd
 class UserModel(Base):

@@ -3,12 +3,12 @@ from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Query,  HTTPException
 from typing import List
 from decimal import Decimal
-from shared.dependencies import get_db
+from api.shared.dependencies import get_db
 from sqlalchemy.orm import Session
-from models.produtos_models import ProdutoModel
+from api.models.produtos_models import ProdutoModel
 from typing import List, Optional
 from datetime import datetime
-from shared.dependencies import usuario_validacao, admin_validacao
+
 
 
 
@@ -59,7 +59,7 @@ class Produto_Request(BaseModel):
 
 
 
-@router.post("", response_model=Produto_Response,dependencies=[Depends(admin_validacao)])
+@router.post("", response_model=Produto_Response)
 def ciar_produto(produto_request : Produto_Request,
                  db:Session = Depends(get_db))-> Produto_Response:
         produto_a_ser_criado = ProdutoModel(**produto_request.model_dump())
@@ -85,7 +85,7 @@ def ciar_produto(produto_request : Produto_Request,
 
 
 
-@router.get("/{id_do_produto}", response_model=Produto_Response,dependencies=[Depends(usuario_validacao)])
+@router.get("/{id_do_produto}", response_model=Produto_Response)
 def listar_produto_por_id(id_do_produto: int, db: Session = Depends(get_db))-> Produto_Response:
     return buscar_produto_por_id(id_do_produto, db)
 
@@ -95,7 +95,7 @@ def listar_produto_por_id(id_do_produto: int, db: Session = Depends(get_db))-> P
 
 
 
-@router.get("/paginacao", response_model=List[Produto_Response],dependencies=[Depends(usuario_validacao)])
+@router.get("/paginacao", response_model=List[Produto_Response])
 def listar_produtos_com_paginacao(page: int = Query(1, ge=1),
                     page_size: int = Query(10, ge=1, le=100),
                     categoria : str = Query(None, min_length=1),
@@ -136,7 +136,7 @@ def listar_produtos_com_paginacao(page: int = Query(1, ge=1),
 
 
 
-@router.delete("/{id_do_produto}",dependencies=[Depends(admin_validacao)])
+@router.delete("/{id_do_produto}")
 def excluir_produto(id_do_produto: int, db:Session= Depends(get_db))-> None:
     produto_a_ser_excluido = db.query(ProdutoModel).get(id_do_produto)
 
@@ -145,7 +145,7 @@ def excluir_produto(id_do_produto: int, db:Session= Depends(get_db))-> None:
 
 
 
-@router.put("/{id_do_produto}", response_model= Produto_Response,dependencies=[Depends(admin_validacao)])
+@router.put("/{id_do_produto}", response_model= Produto_Response)
 def atualizar_produto(id_do_produto: int, produto_request : Produto_Request,
                        db:Session = Depends(get_db))-> Produto_Response:
     produto_a_ser_alterado = buscar_produto_por_id(id_do_produto, db)
@@ -171,7 +171,7 @@ def atualizar_produto(id_do_produto: int, produto_request : Produto_Request,
 
 
 
-def buscar_produto_por_id(id_do_produto: int, db: Session,dependencies=[Depends(usuario_validacao)]) -> Produto_Response:
+def buscar_produto_por_id(id_do_produto: int, db: Session) -> Produto_Response:
     produto_a_ser_retornado = db.query(ProdutoModel).get(id_do_produto)
     if produto_a_ser_retornado is None:
         raise("este produto não existe")
