@@ -39,7 +39,7 @@ def criar_cliente(cliente_request : ClienteRequest,
         raise HTTPException(detail='Cliente com este CPF já está cadastrado', status_code=status.HTTP_400_BAD_REQUEST)
     
     
-    
+    valida_nome_cliente(cliente_request.nome)
     valida_email(cliente_request.email)
     valida_cpf(cliente_request.cpf)
     
@@ -151,6 +151,14 @@ def buscar_cliente_por_id(id_do_cliente: int, db: Session) -> ClienteResponse:
 
     return cliente_a_ser_retornado
 
+
+def valida_nome_cliente(nome : str):
+    if len(nome)> 30 or not nome.isnumeric():
+        raise HTTPException(
+            status_code = 400,
+            detail='Nome de usuário muito grande.'
+        
+        )
 
 def valida_cpf(cpf : str):
     if len(cpf) < 11 or not cpf.isdigit():
