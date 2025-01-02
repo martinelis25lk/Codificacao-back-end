@@ -153,7 +153,7 @@ def buscar_cliente_por_id(id_do_cliente: int, db: Session) -> ClienteResponse:
 
 
 def valida_nome_cliente(nome : str):
-    if len(nome)> 30 or not nome.isnumeric():
+    if len(nome)> 30:
         raise HTTPException(
             status_code = 400,
             detail='Nome de usuário muito grande.'
