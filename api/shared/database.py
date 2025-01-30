@@ -1,25 +1,20 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.orm import declarative_base
+from api.settings import Settings
 
+# Instanciar a classe Settings para acessar a configuração
+settings = Settings()
 
-
-
-
-
-
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:123456789@localhost:5432/db_loja"
-
-
-
-
+# Passar o DATABASE_URL corretamente como string
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    settings.DATABASE_URL
 )
 
-SessionLocal = sessionmaker(autocommit= False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-
-
+def get_session():
+    with Session(engine) as session:
+        yield session

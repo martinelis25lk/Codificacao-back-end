@@ -9,7 +9,9 @@ class ClienteModel(Base):
     cpf = Column(String(11))
     email = Column(String(30))
     nome = Column(String(30))
-    
+
+ 
+
 
 
 

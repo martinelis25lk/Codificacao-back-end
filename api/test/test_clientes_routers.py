@@ -1,12 +1,5 @@
-from fastapi.testclient import TestClient
-
-
 from api.shared.database import Base, engine
-from api.shared.dependencies import get_db
-
-from api.main import app
-
-client = TestClient(app)
+from http import HTTPStatus
 
 
 
@@ -14,10 +7,10 @@ client = TestClient(app)
 
 #post=====================================================================
 
-def test_deve_criar_cliente():
+def test_deve_criar_cliente(client):
 
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
+    #Base.metadata.drop_all(bind = engine)
+    #Base.metadata.create_all(bind = engine)
 
     
     novo_cliente = {'cpf': '07399627363', 
@@ -29,11 +22,9 @@ def test_deve_criar_cliente():
     assert response.json()["nome"] == "guilherme eduardo almeida"
 
 
-def test_cria_cliente_com_cpf_invalido():
+def test_cria_cliente_com_cpf_invalido(client):
 
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
-
+    
     cliente_com_cpf_invalido = {'id': 1, 'nome':'zeca', 'cpf': '123', 'email': 'email@gmail.com'}
 
     response = client.post("/clientes/cria_cliente",json=cliente_com_cpf_invalido)
@@ -41,9 +32,8 @@ def test_cria_cliente_com_cpf_invalido():
 
     
 
-def test_cria_cliente_com_email_invalido():
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
+def test_cria_cliente_com_email_invalido(client):
+    
 
     cliente_com_email_invalido = {'id': 1, 'nome':'zeca', 'cpf': '70025509349', 'email': '123'}
 
@@ -52,9 +42,8 @@ def test_cria_cliente_com_email_invalido():
     assert response.status_code == 400
 
 
-def test_campo_cpf_obrigatorio_ausente():
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
+def test_campo_cpf_obrigatorio_ausente(client):
+  
     
     #tentando criar cliente sem cpf
     response_cpf = client.post('/clientes/cria_cliente', 
@@ -66,10 +55,9 @@ def test_campo_cpf_obrigatorio_ausente():
 
 
 
-def test_testa_campo_email_obrigatorio_ausente():
+def test_testa_campo_email_obrigatorio_ausente(client):
     #tenta criar cliente sem email
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
+    
 
     response_email = client.post('/clientes/cria_cliente', json={'nome':'guilhermekk', 'cpf':'70025509349'}
                                  )
@@ -78,9 +66,8 @@ def test_testa_campo_email_obrigatorio_ausente():
 
 
 
-def test_testa_campo_nome_obrigatorio_ausente():
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
+def test_testa_campo_nome_obrigatorio_ausente(client):
+   
 
     #tenta criar cliente sem nome 
 
@@ -92,10 +79,9 @@ def test_testa_campo_nome_obrigatorio_ausente():
     assert 'nome' in response_nome.json()['detail'][0]['loc']
 
 
-def test_duplicao_de_cpf():
+def test_duplicao_de_cpf(client):
 
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
+   
     #criar um cliente inicial com cpf unico
     response = client.post('/clientes/cria_cliente',
      json={'nome': ' eduardo', 'cpf':'48271506056', 'email':'eduardo@gmail.com'})
@@ -120,10 +106,8 @@ def test_duplicao_de_cpf():
 
 #get com id================================================================================================
 
-def test_buscar_cliente_existente():
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
-
+def test_buscar_cliente_existente(client):
+    
     client.post('/clientes/cria_cliente', json={'nome': 'Joao', 'cpf': '12345678901', 'email': 'joao@gmail.com'})
 
     response = client.get('clientes/pegar_cliente_id/1')
@@ -135,10 +119,9 @@ def test_buscar_cliente_existente():
     assert cliente['cpf']   == '12345678901'
     assert cliente['email'] == 'joao@gmail.com'
 
-def test_buscar_cliente_inexistente():
+def test_buscar_cliente_inexistente(client):
 
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
+    
 
     response = client.get('/clientes/pegar_cliente_id/99')
 
@@ -152,10 +135,9 @@ def test_buscar_cliente_inexistente():
 #put/patch=================================================================================================
 
 
-def test_atualizar_cliente_valido():
+def test_atualizar_cliente_valido(client):
 
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
+   
 
     client.post('/clientes/cria_cliente', json={'nome': 'lucas', 'cpf':'76144332030', 'email':'lucas@gmail.com'})
 
@@ -168,10 +150,9 @@ def test_atualizar_cliente_valido():
     assert response.json()['email'] == 'lucas.silva@gmail.com'
 
 
-def test_atualizar_cliente_inexistente():
+def test_atualizar_cliente_inexistente(client):
 
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
+    
 
     response = client.put('/clientes/atualizar_cliente_id/99', 
     json={'nome': 'guilherme eduardo', 'cpf':'09313033038', 'email':'guilherme@gmail.com'})
@@ -181,11 +162,9 @@ def test_atualizar_cliente_inexistente():
     assert response.json()['detail'] == 'Cliente não encontrado'
 
 
-def test_atualizar_cliente_parcial():
+def test_atualizar_cliente_parcial(client):
 
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
-
+    
     client.post('/clientes/cria_cliente', 
         json={'nome': 'Joao', 'cpf': '59311655090', 'email': 'joao@gmail.com'})
 
@@ -201,10 +180,9 @@ def test_atualizar_cliente_parcial():
 
 
 
-def test_atualizar_cliente_dados_invalidos():
+def test_atualizar_cliente_dados_invalidos(client):
 
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+   
 
     client.post('/clientes/cria_cliente', 
     json={'nome':'paula', 'cpf':'52929814004', 'email': 'paula@gmail.com'})
@@ -222,10 +200,9 @@ def test_atualizar_cliente_dados_invalidos():
 
 #delete====================================================================================================
 
-def test_excluir_cliente_valido():
+def test_excluir_cliente_valido(client):
 
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+    
 
     client.post('/clientes/cria_cliente', json={
         'nome':'carlos',
@@ -254,10 +231,9 @@ def test_excluir_cliente_valido():
 #==========================================================================================================
 
 
-def test_deve_listar_todos_os_clientes():
+def test_deve_listar_todos_os_clientes(client):
 
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
+    
 
     client.post("/clientes/cria_cliente", json={'id': 1, 'cpf': '11111111111', 'nome': 'mel', 'email': 'mel@gmail.com'})
     client.post("/clientes/cria_cliente", json={'id': 2, 'cpf': '22222222222', 'nome': 'string', 'email': 'teste@gmail.com'})
@@ -277,23 +253,19 @@ def test_deve_listar_todos_os_clientes():
     ]
 
 
-def test_deve_retornar_lista_vazia_ao_listar_sem_clientes():
+def test_deve_retornar_lista_vazia_ao_listar_sem_clientes(client):
 
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
-
+    
     response = client.get("/clientes/listar_com_paginacao")
 
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_listar_com_paginacao():
+def test_listar_com_paginacao(client):
     #testando a funcionalidade de paginacao
 
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
-
+    
     
    
     client.post("/clientes/cria_cliente", json={ 'nome': 'cliente0','cpf': '25646378095', 'email': 'mel@gmail.com'})
@@ -317,20 +289,19 @@ def test_listar_com_paginacao():
     assert response.json()[0]['nome'] == 'cliente0' #verificcar o primeiro cliente
 
 
-def test_listar_com_filtro_por_nome():
+def test_listar_com_filtro_por_nome(client):
     #testar se o filtrop por nome ou email funciona
 
-    Base.metadata.drop_all(bind = engine)
-    Base.metadata.create_all(bind = engine)
+    
 
-    client.post('/clientes/cria_cliente', json={'nome': 'Alice', 'cpf': '11111111111', 'email': 'alice@gmail.com'})
-    client.post('/clientes/cria_cliente', json={'nome': 'Bob', 'cpf': '22222222222', 'email': 'bob@gmail.com'})
+    client.post('/clientes/cria_cliente', json={'nome': 'Alice', 'cpf': '07399627363', 'email': 'alice@gmail.com'})
+    client.post('/clientes/cria_cliente', json={'nome': 'Bob', 'cpf': '70025509349', 'email': 'bob@gmail.com'})
 
     response = client.get('/clientes/listar_com_paginacao?nome=Alice')
 
     assert response.status_code == 200
     assert len(response.json()) == 1
-    assert response.json()[0] == {'id': 1, 'nome': 'Alice', 'cpf': '11111111111', 'email':'alice@gmail.com'}
+    assert response.json()[0] == {'id': 1, 'nome': 'Alice', 'cpf': '07399627363', 'email':'alice@gmail.com'}
 
     
 

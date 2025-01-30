@@ -14,8 +14,9 @@ class User(BaseModel):
         return value
  
 
+class Token(BaseModel):
+    token_de_acesso : str  #aquela string q tem 3 pontos
+    tipo_de_token   : str  
 
 
 
-class RefreshTokenSchema(BaseModel):
-    token: str

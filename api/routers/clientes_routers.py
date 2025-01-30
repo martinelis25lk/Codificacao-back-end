@@ -76,7 +76,7 @@ def paginar_clientes(page: int = Query(1, ge=1),
         query = query.filter(ClienteModel.email.ilike(f"%{email}%"))
     
     skip = (page -1 )* page_size # calcula o indice inicial
-    clientes = query.offset(skip).limit(page_size).all()
+    clientes = query.offset(skip).limit(page_size).all()  #revisar parametros de query
 
     return clientes
 
@@ -169,7 +169,7 @@ def valida_cpf(cpf : str):
 
 def valida_email(email : str):
     email_regex = r"^[a-zA-Z0-9.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-    if not re.match(email_regex, email):
+    if not re.match(email_regex, email): 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="E-mail inválido. Insira um e-mail em formato válido"
