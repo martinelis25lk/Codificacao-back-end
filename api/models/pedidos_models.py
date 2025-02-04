@@ -12,11 +12,6 @@ class PedidoModel(Base):
     cliente = relationship("ClienteModel")
 
 
-    #cliente é o pai, e os pedidos é o filho 
     
 
     
-
-
-
-# período, seção dos produtos, id_pedido, status do pedido e cliente.

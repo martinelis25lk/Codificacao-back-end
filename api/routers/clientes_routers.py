@@ -1,11 +1,13 @@
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Query
-
+from api.autenticacao.funcoes_auxiliares_token import valida_cpf, valida_email, valida_nome_cliente
 from fastapi import HTTPException, status
+from sqlalchemy import select
 
 from typing import List
 from decimal import Decimal
-from api.shared.dependencies import get_db
+#from api.shared.dependencies import get_db
+from api.shared.database import get_session
 from sqlalchemy.orm import Session
 from api.models.clientes_models import ClienteModel
 from typing import List, Optional
@@ -30,12 +32,15 @@ class ClienteRequest(BaseModel):
 
 
 @router.post("/cria_cliente", response_model = ClienteResponse) 
-def criar_cliente(cliente_request : ClienteRequest,
-                   db : Session = Depends(get_db))-> ClienteResponse:
+def criar_cliente(
+    cliente_request : ClienteRequest,
+    session = Depends(get_session)):
     
 
-    cliente_existente = db.query(ClienteModel).filter(ClienteModel.cpf == cliente_request.cpf).first()
-    if cliente_existente:
+    db_cliente = session.scalar(
+        select(ClienteModel).where(ClienteModel.cpf == cliente_request.cpf)
+    )
+    if db_cliente:
         raise HTTPException(detail='Cliente com este CPF já está cadastrado', status_code=status.HTTP_400_BAD_REQUEST)
     
     
@@ -48,9 +53,9 @@ def criar_cliente(cliente_request : ClienteRequest,
     )
 
     
-    db.add(cliente_a_ser_retornado)
-    db.commit()
-    db.refresh(cliente_a_ser_retornado)
+    session.add(cliente_a_ser_retornado)
+    session.commit()
+    session.refresh(cliente_a_ser_retornado)
 
     return ClienteResponse(
         **cliente_a_ser_retornado.__dict__
@@ -62,85 +67,91 @@ def criar_cliente(cliente_request : ClienteRequest,
 
 
 @router.get("/listar_com_paginacao", response_model=List[ClienteResponse])
-def paginar_clientes(page: int = Query(1, ge=1),
-                    page_size: int = Query(10, ge=1, le=100),
-                    nome : str = Query(None, min_length=1),
-                    email : str =   Query(None, min_length= 1),
-                    db: Session = Depends(get_db)):
+def paginar_clientes(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    nome: str = Query(None, min_length=1),
+    email: str = Query(None, min_length=1),
+    session: Session = Depends(get_session)
+) -> List[ClienteResponse]:
     
-    query = db.query(ClienteModel)
+    query = select(ClienteModel)
     
     if nome:
-        query = query.filter(ClienteModel.nome.ilike(f"%{nome}%"))
+        query = query.where(ClienteModel.nome.ilike(f"%{nome}%"))
     if email:
-        query = query.filter(ClienteModel.email.ilike(f"%{email}%"))
-    
-    skip = (page -1 )* page_size # calcula o indice inicial
-    clientes = query.offset(skip).limit(page_size).all()  #revisar parametros de query
+        query = query.where(ClienteModel.email.ilike(f"%{email}%"))
+
+    clientes = session.scalars(query.offset(skip).limit(limit)).all()
 
     return clientes
-
     
 
 
 @router.get("/pegar_cliente_id/{id_do_cliente}", response_model=ClienteResponse)
-def lista_cliente_por_id(id_do_cliente: int,
-                          db: Session = Depends(get_db))-> ClienteResponse:
-    cliente = db.query(ClienteModel).get(id_do_cliente)
+def lista_cliente_por_id(
+    id_do_cliente: int,
+    session: Session = Depends(get_session)
+) -> ClienteResponse:
+  
+    cliente = session.scalar(select(ClienteModel).where(ClienteModel.id == id_do_cliente))
+
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
     return cliente
-    #return buscar_cliente_por_id(id_do_cliente, db)
 
 
 
 
+@router.put("/atualizar_cliente_id/{id_do_cliente}", response_model=ClienteResponse, status_code=200)
+def atualizar_cliente(
+    id_do_cliente: int,
+    cliente_request: ClienteRequest,
+    session: Session = Depends(get_session)
+) -> ClienteResponse:
+    
+    cliente_db = session.scalar(select(ClienteModel).where(ClienteModel.id == id_do_cliente))
+    
+    if not cliente_db:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
 
-@router.put("/atualizar_cliente_id/{id_do_cliente}", response_model = ClienteResponse, status_code=200)
-def atualizar_cliente(id_do_cliente : int,
-                      cliente_request : ClienteRequest,
-                      db: Session = Depends(get_db))-> ClienteResponse:
-    cliente_atualizado = buscar_cliente_por_id(id_do_cliente, db)
+    cliente_db.cpf = cliente_request.cpf or cliente_db.cpf
+    cliente_db.nome = cliente_request.nome or cliente_db.nome
+    cliente_db.email = cliente_request.email or cliente_db.email
 
-    if not cliente_atualizado:
-        raise HTTPException(status_code=404, detail='Cliente não encontrado')
-
-     # Atualiza apenas os campos enviados na requisição
-    cliente_atualizado.cpf = cliente_request.cpf or cliente_atualizado.cpf
-    cliente_atualizado.nome = cliente_request.nome or cliente_atualizado.nome
-    cliente_atualizado.email = cliente_request.email or cliente_atualizado.email
-
-
-    db.add(cliente_atualizado)
-    db.commit()
-    db.refresh(cliente_atualizado)
-
-    return cliente_atualizado
-
-
-
+    
+    session.commit()
+    session.refresh(cliente_db)
+    
+    return cliente_db
 
 
-@router.delete("/excluir_cliente/{id_do_cliente}", status_code= 204)
-def excluir_cliente(id_do_cliente : int, 
-                    db: Session = Depends(get_db))-> None:
-    cliente = db.query(ClienteModel).get(id_do_cliente)
-
-    if not cliente:
-        raise HTTPException(detail='Cliente não encontrado', status_code=status.HTTP_404_NOT_FOUND)
 
 
-    db.delete(cliente)
-    db.commit()
+@router.delete("/excluir_cliente/{id_do_cliente}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_cliente(
+    id_do_cliente: int,
+    session: Session = Depends(get_session)
+) -> None:
+    
+    cliente_db = session.scalar(select(ClienteModel).where(ClienteModel.id == id_do_cliente))
+    
+    if not cliente_db:
+        raise HTTPException(
+            detail="Cliente não encontrado", 
+            status_code=status.HTTP_404_NOT_FOUND
+        )
+    
+    session.delete(cliente_db)
+    session.commit()
 
+    return {"msg": "Cliente excluído com sucesso"}
  
 
 
 
-
-
-
-#funções auxiliares para as rotas
 
 def buscar_cliente_por_id(id_do_cliente: int, db: Session) -> ClienteResponse:
     cliente_a_ser_retornado = db.query(ClienteModel).get(id_do_cliente)
@@ -150,29 +161,5 @@ def buscar_cliente_por_id(id_do_cliente: int, db: Session) -> ClienteResponse:
     
 
     return cliente_a_ser_retornado
-
-
-def valida_nome_cliente(nome : str):
-    if len(nome)> 30:
-        raise HTTPException(
-            status_code = 400,
-            detail='Nome de usuário muito grande.'
-        
-        )
-
-def valida_cpf(cpf : str):
-    if len(cpf) < 11 or not cpf.isdigit():
-        raise HTTPException(
-            status_code=400,
-            detail="CPF inválido. o CPF deve conter exatamente 11 digitos numéricos"
-        )
-
-def valida_email(email : str):
-    email_regex = r"^[a-zA-Z0-9.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-    if not re.match(email_regex, email): 
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="E-mail inválido. Insira um e-mail em formato válido"
-        )
 
     

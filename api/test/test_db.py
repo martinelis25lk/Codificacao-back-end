@@ -1,10 +1,10 @@
-from api.models.usuario_model import UserModel
+from api.models.usuario_model import UsuarioModel
 from api.routers.usuario_router import UsuarioResponse
 from fastapi import HTTPException, status
 
 def test_create_user(session):
         # Criação do objeto UserModel
-        usuario = UserModel(
+        usuario = UsuarioModel(
             username='dunossaura',
             password='minha_senha',
             cargo='usuario'

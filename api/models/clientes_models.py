@@ -11,11 +11,3 @@ class ClienteModel(Base):
     nome = Column(String(30))
 
  
-
-
-
-
-
-
-
-#nome, email, cpf, id

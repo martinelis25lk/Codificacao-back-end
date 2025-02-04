@@ -1,10 +1,10 @@
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from fastapi import HTTPException, status
 from api.shared.dependencies import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from api.models.usuario_model import UserModel
+from api.models.usuario_model import UsuarioModel
 from typing import List
 import re 
 from fastapi.security import OAuth2PasswordRequestForm
@@ -50,24 +50,20 @@ class UsuarioRequest(BaseModel):
 def criar_usuario(
     usuario : UsuarioRequest, 
     session = Depends(get_session),
-
     ):
                   
-    
     db_usuario = session.scalar(
-        select(UserModel).where(
-            UserModel.username == usuario.username
+        select(UsuarioModel).where(
+            UsuarioModel.username == usuario.username
         )
     )
-                  
                   
     if db_usuario:
         raise HTTPException(
             detail='usuario com esse username ja cadastrado', status_code=status.HTTP_400_BAD_REQUEST
         )
     
-
-    usuario_a_ser_retornado = UserModel(
+    usuario_a_ser_retornado = UsuarioModel(
        username = usuario.username,
        password = obtem_senha_hash(usuario.password), # senha suja
        cargo    = usuario.cargo
@@ -87,7 +83,7 @@ def criar_usuario(
 @router.get('/listar_usuarios', response_model=list[UsuarioResponse])
 def listar_usuarios(
         skip: int = 0, limit : int = 100, session: Session = Depends(get_session)):
-    usuarios = session.scalars(select(UserModel).offset(skip).limit(limit)).all()
+    usuarios = session.scalars(select(UsuarioModel).offset(skip).limit(limit)).all()
 
     return usuarios
 
@@ -126,7 +122,7 @@ def atualizar_usuario(
 
 
 
-    usuario_db = db.query(UserModel).filter(UserModel.id == usuario_id).first()
+    usuario_db = db.query(UsuarioModel).filter(UsuarioModel.id == usuario_id).first()
     if not usuario_db:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
@@ -164,7 +160,7 @@ def login_para_o_token_de_acesso(
     session : Session = Depends(get_session),
 ):
     
-    usuario = session.scalar(select(UserModel).where(UserModel.username == form_data.username))
+    usuario = session.scalar(select(UsuarioModel).where(UsuarioModel.username == form_data.username))
     
     
 

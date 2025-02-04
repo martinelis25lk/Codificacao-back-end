@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from api.models.usuario_model import Base
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
-from api.models.usuario_model import UserModel
+from api.models.usuario_model import UsuarioModel
 from fastapi.testclient import TestClient
 from api.shared.database import get_session
 from api.autenticacao.funcoes_auxiliares_token import obtem_senha_hash
@@ -48,7 +48,7 @@ def session():
 @pytest.fixture()
 def usuario(session):
     pwd = 'teste@'
-    usuario = UserModel(
+    usuario = UsuarioModel(
         username='teste', 
         password= obtem_senha_hash(pwd),
         cargo = 'usuario'

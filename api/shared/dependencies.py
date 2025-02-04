@@ -1,7 +1,7 @@
 from api.shared.database import SessionLocal
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, status
-from api.models.usuario_model import UserModel
+from api.models.usuario_model import UsuarioModel
 
 
 
