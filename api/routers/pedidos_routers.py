@@ -3,10 +3,14 @@ from fastapi import APIRouter, Depends, Query
 from datetime import datetime
 from typing import List
 from decimal import Decimal
-from api.shared.dependencies import get_db
+from api.shared.database import get_session
 from sqlalchemy.orm import Session
 from api.models.pedidos_models import PedidoModel 
 from typing import List, Optional
+from fastapi import HTTPException, status
+from sqlalchemy import select
+
+from api.models.clientes_models import ClienteModel
 
 
 
@@ -33,72 +37,116 @@ class PedidoResponse(BaseModel):
 
 
     
+@router.post("/criar_pedido", response_model=PedidoResponse)
+def criar_pedido(
+    pedido_request : PedidoRequest,
+    session = Depends(get_session))-> PedidoResponse:
 
-@router.post("", response_model=PedidoResponse)
-def criar_pedido(pedido_request : PedidoRequest ,db:Session = Depends(get_db))-> PedidoResponse:
+    cliente_existente = session.scalar(
+        select(ClienteModel).where(
+            ClienteModel.id == pedido_request.id_do_cliente
+        ))
+    
+    if not cliente_existente:
+        raise HTTPException(
+            detail="o cliente selecionado para este pedido não existe na base de dados.",
+            status_code=status.HTTP_404_NOT_FOUND
+        )
+
     pedido_a_ser_criado = PedidoModel(**pedido_request.model_dump())
-    db.add(pedido_a_ser_criado)
-    db.commit()
-    db.refresh(pedido_a_ser_criado)
+    session.add(pedido_a_ser_criado)
+    session.commit()
+    session.refresh(pedido_a_ser_criado)
 
     return pedido_a_ser_criado
+
+
+
+@router.get("/listar_pedido/{id_do_pedido}", response_model=PedidoResponse)
+def listar_pedido_pelo_id(
+    id_do_pedido: int, 
+
+    session: Session = Depends(get_session)
+) -> PedidoResponse:
     
 
-@router.get("/{id_do_pedido}", response_model=PedidoResponse)
-def listar_pedido_pelo_id(id_do_pedido : int, db: Session = Depends(get_db))-> PedidoResponse:
-    pedido_a_ser_retornado = db.query(PedidoModel).get(id_do_pedido)
+    pedido_a_ser_retornado = session.scalar(
+        select(PedidoModel).where(PedidoModel.codigo_pedido == id_do_pedido)
+    )
+
+    if not pedido_a_ser_retornado:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
+
     return pedido_a_ser_retornado
 
 
-@router.delete("/{id_do_pedido}", response_model=None)
-def excluir_pedido(id_do_pedido : int, db:Session= Depends(get_db))-> None:
-    pedido_a_ser_deletado = db.query(PedidoModel).get(id_do_pedido)
+@router.delete("/excluir_pedido/{id_do_pedido}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_pedido(
+    id_do_pedido: int, 
+    session: Session = Depends(get_session)
+) -> None:
+    pedido_a_ser_deletado = session.scalar(
+        select(PedidoModel).where(PedidoModel.codigo_pedido  == id_do_pedido)
+    )
 
-    db.delete(pedido_a_ser_deletado)
-    db.commit()
+    if not pedido_a_ser_deletado:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
 
+    session.delete(pedido_a_ser_deletado)
+    session.commit()
 
-
-@router.get("/paginacao", response_model=List[PedidoResponse])
-def paginar_pedidos(page              : int = Query(1, ge=1),
-                    page_size          : int = Query(10, ge=1, le=100),
-                    secao_dos_produtos : str =   Query(None, min_length= 1),
-                    status_pedido      : bool =  Query(None),
-                    
-
-                    db: Session = Depends(get_db)):
     
-    query = db.query(PedidoModel)
-    
+
+
+@router.get("/listar/paginacao", response_model=List[PedidoResponse])
+def paginar_pedidos(
+    skip: int = 0,
+    limit: int = 10,
+    secao_dos_produtos: Optional[str] = Query(None, min_length=1),
+    status_pedido: Optional[bool] = Query(None),
+    session: Session = Depends(get_session),
+):
+    query = select(PedidoModel)
+
     if secao_dos_produtos:
-        query = query.filter(PedidoModel.secao_dos_produtos.ilike(f"%{secao_dos_produtos}%"))
-    if status_pedido:
-        query = query.filter(PedidoModel.status_pedido == status_pedido)
+        query = query.where(PedidoModel.secao_dos_produtos.ilike(f"%{secao_dos_produtos}%"))
 
-    
-    skip = (page -1 )* page_size # calcula o indice inicial
-    pedidos = query.offset(skip).limit(page_size).all()
+    if status_pedido is not None:
+        query = query.where(PedidoModel.status_pedido == status_pedido)
+
+    pedidos = session.scalars(query.offset(skip).limit(limit)).all()
 
     return pedidos
 
 
-@router.put("/{id_do_pedido}", response_model=PedidoResponse)
-def atualizar_pedido(id_do_pedido : int, pedido_request : PedidoRequest, db : Session = Depends(get_db))->PedidoResponse:
-    pedido_a_ser_atualizado = buscar_pedido_por_id(id_do_pedido, db)
+
+
+
+
+
+@router.put("/atualizar_pedido/{id_do_pedido}", response_model=PedidoResponse)
+def atualizar_pedido(
+    id_do_pedido: int, 
+    pedido_request: PedidoRequest, 
+    session: Session = Depends(get_session)
+) -> PedidoResponse:
+    
+    pedido_a_ser_atualizado = session.scalar(
+        select(PedidoModel).where(PedidoModel.codigo_pedido == id_do_pedido)
+    )
+
+    if not pedido_a_ser_atualizado:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
+
     pedido_a_ser_atualizado.status_pedido = pedido_request.status_pedido
     pedido_a_ser_atualizado.secao_dos_produtos = pedido_request.secao_dos_produtos
     pedido_a_ser_atualizado.periodo = pedido_request.periodo
 
-    db.add(pedido_a_ser_atualizado)
-    db.commit()
-    db.refresh(pedido_a_ser_atualizado)
+    session.commit()
+    session.refresh(pedido_a_ser_atualizado)
 
     return pedido_a_ser_atualizado
 
-
-
-    
-    
     
 
 
