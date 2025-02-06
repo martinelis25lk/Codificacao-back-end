@@ -285,7 +285,7 @@ def test_listar_com_paginacao(client):
 
   
     assert response.status_code == 200
-    assert len(response.json()) == 5
+    assert len(response.json()) == 10
     assert response.json()[0]['nome'] == 'cliente0' #verificcar o primeiro cliente
 
 

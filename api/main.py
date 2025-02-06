@@ -5,18 +5,11 @@ from api.routers.produtos_routers import router as produto_router
 from api.routers.pedidos_routers import router as pedido_router
 from api.routers.usuario_router import router as usuario_router
 from api.shared.database import engine, Base
-from api.models.clientes_models import ClienteModel
-from api.models import usuario_model
-from api.models.produtos_models import ProdutoModel
-from api.models.pedidos_models import PedidoModel
+
 
 
 app = FastAPI()
 
-
-@app.get("/")
-def ola_mundo_do_fastapi():
-    return {"ok":"está funcionando"}
 
 
 

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends
 from fastapi import HTTPException, status
-from api.shared.dependencies import get_db
+
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from api.models.usuario_model import UsuarioModel
@@ -15,7 +15,6 @@ from api.autenticacao.funcoes_auxiliares_token import (
     obtem_usuario_atual,)
 
 from api.autenticacao.schemas import Token
-
 from api.shared.database import get_session
 
 
@@ -117,12 +116,12 @@ def atualizar_usuario(
     usuario_id: int, 
     usuario: UsuarioRequest,
     usuario_atual = Depends(obtem_usuario_atual), 
-    db: Session = Depends(get_db)
+    session: Session = Depends(get_session)
     ):
 
 
 
-    usuario_db = db.query(UsuarioModel).filter(UsuarioModel.id == usuario_id).first()
+    usuario_db = session.query(UsuarioModel).filter(UsuarioModel.id == usuario_id).first()
     if not usuario_db:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
@@ -140,8 +139,8 @@ def atualizar_usuario(
     usuario_db.cargo    = usuario.cargo
 
 
-    db.commit()
-    db.refresh(usuario_db) 
+    session.commit()
+    session.refresh(usuario_db) 
 
     return usuario_db
 

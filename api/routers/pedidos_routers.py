@@ -151,10 +151,11 @@ def atualizar_pedido(
 
 
 
-def buscar_pedido_por_id(id_do_pedido: int, db: Session) -> PedidoResponse:
-    pedido_a_ser_retornado = db.query(PedidoModel).get(id_do_pedido)
+def buscar_pedido_por_id(id_do_pedido: int, session: Session) -> PedidoResponse:
+    stmt = select(PedidoModel).where(PedidoModel.id == id_do_pedido)
+    pedido_a_ser_retornado = session.scalars(stmt).first()
+
     if pedido_a_ser_retornado is None:
-        raise("pedido nao existe.")
-    
+        raise ValueError("Pedido não existe.")
 
     return pedido_a_ser_retornado
