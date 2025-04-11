@@ -1,14 +1,6 @@
 # Teste-de-Codifica-o-de-Desenvolvedor-Back-End
  Um pequeno projeto backend utilizando fastapi e postgres.
 
-
-Lu Estilo API - FastAPI
-Descrição do Problema
-A Lu Estilo é uma empresa de confecção que busca novas oportunidades de negócio. Entretanto, o time comercial da empresa atualmente não possui uma ferramenta que facilite a criação de novos canais de vendas.
-
-Solução
-Para apoiar o time comercial, desenvolvemos uma API RESTful utilizando FastAPI. Esta API fornece dados e funcionalidades que facilitam a comunicação entre o time comercial, clientes e a empresa. A API será consumida por uma interface Front-End, desenvolvida por outro time.
-
 Requisitos do Projeto
 1. Linguagens e Estruturas
 Python
